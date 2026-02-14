@@ -9,10 +9,9 @@ pipeline {
           echo "WORKSPACE=$WORKSPACE"
           ls -la
 
-          docker run --rm \
-            --network ci \
-            -v "$WORKSPACE":/work \
-            -w /work \
+          docker run --rm --network ci \
+            --volumes-from jenkins \
+            -w "$WORKSPACE" \
             python:3.11-slim bash -lc '
               set -eux
               python -V
