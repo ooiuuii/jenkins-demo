@@ -1,21 +1,35 @@
-stage('Test') {
-  steps {
-    sh '''
-      docker run --rm \
-        --network ci \
-        --volumes-from jenkins \
-        -w /var/jenkins_home/workspace/demo-pipeline \
-        python:3.11-slim bash -lc "
-          ls -la &&
-          python -V &&
-          pip install -U pip &&
-          pip install -r requirements.txt &&
-          pytest -v --html=report.html --self-contained-html
-        "
-    '''
+pipeline {
+  agent any
+
+  stages {
+    stage('Test') {
+      steps {
+        sh '''
+          set -euxo pipefail
+          echo "WORKSPACE=$WORKSPACE"
+          ls -la
+
+          docker run --rm \
+            --network ci \
+            -v "$WORKSPACE":/work \
+            -w /work \
+            python:3.11-slim bash -lc '
+              set -eux
+              python -V
+              ls -la
+              test -f requirements.txt
+              pip install -U pip
+              pip install -r requirements.txt
+              pytest -v --html=report.html --self-contained-html
+            '
+        '''
+      }
+    }
   }
-}
-      archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
+
+  post {
+    always {
+      archiveArtifacts artifacts: 'report.html', fingerprint: true
     }
   }
 }
