@@ -2,13 +2,21 @@ pipeline {
   agent any
 
   stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
     stage('Test') {
       steps {
         sh '''
           docker run --rm \
-            --network ci \
-            -v "$WORKSPACE":/work -w /work \
+            --volumes-from jenkins \
+            -w /var/jenkins_home/workspace/demo-pipeline \
             python:3.11-slim bash -lc "
+              ls -la &&
+              python -V &&
               pip install -U pip &&
               pip install -r requirements.txt &&
               pytest -v --html=report.html --self-contained-html
@@ -20,7 +28,7 @@ pipeline {
 
   post {
     always {
-      archiveArtifacts artifacts: 'report.html', fingerprint: true
+      archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
     }
   }
 }
